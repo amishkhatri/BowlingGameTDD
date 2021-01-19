@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>xp.tdd.bowling.game.service</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="BallingGameServiceTest\**" />
+    <EmbeddedResource Remove="BallingGameServiceTest\**" />
+    <None Remove="BallingGameServiceTest\**" />
+  </ItemGroup>
+
+</Project>
