@@ -144,7 +144,6 @@ namespace xp.tdd.bowling.game.service
 
                             success = true;
 
-
                         }
 
                     }
