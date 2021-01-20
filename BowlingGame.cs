@@ -4,17 +4,40 @@ using System.Linq;
 namespace xp.tdd.bowling.game.service
 {
 
-    public partial class BowlingGame
+    public class BowlingGame
     {
-       
+
         #region Properties
 
-        private List<Frame> _frames = new List<Frame>(GameConfiguration.MAX_FRAME_LIMIT);
+        List<KeyValuePair<int, int>> _frames = new List<KeyValuePair<int, int>>();
 
-        public List<Frame> Frames
+        /*
+         *  (1,8)
+         *  (1,5)
+         * (2,3)
+         * (2,10)
+         * 
+         * */
+
+
+        public List<KeyValuePair<int, int>> Frames
         {
             get { return _frames; }
             set { _frames = value; }
+        }
+
+
+
+
+
+        public int GetTotalScore()
+        {
+            int totalScore = 0;
+
+            foreach (KeyValuePair<int, int> item in Frames)
+                totalScore += item.Value;
+
+            return totalScore;
         }
 
 
@@ -25,7 +48,6 @@ namespace xp.tdd.bowling.game.service
             get { return _message; }
             set { _message = value; }
         }
-
 
         public int RollScore
         {
@@ -39,16 +61,41 @@ namespace xp.tdd.bowling.game.service
         #endregion
 
         #region Methods
-        
 
-        public bool HasFrameMaxOut()
+        // find the last frame number
+        public int GetCurrentFrameNumber() 
         {
-            return Frames.Count >= GameConfiguration.MAX_FRAME_LIMIT;
+            int currentFrames = 0;
+
+            currentFrames = Frames.Count >0 ? Frames.Max(x => x.Key) : 0;
+            
+            return currentFrames;
+
         }
 
-        public bool HasRollMaxOut(Frame frame)
+        public bool CanAddNewFrame(int framenumber)
         {
-            return frame.Rolls.Count >= GameConfiguration.MAX_ROLL_LIMIT;
+            return framenumber <= GameConfiguration.MAX_FRAME_LIMIT;
+            //    return GetCurrentFrameNumber() <= GameConfiguration.MAX_FRAME_LIMIT;
+
+        }
+
+        //validation
+        public bool CanAddNewRoll(int framenumber)
+        {
+            int countTotalRolls=0;
+                        
+            foreach (KeyValuePair<int, int> item in Frames)
+            {
+                if (item.Key == framenumber)
+                {
+                    countTotalRolls++;
+                }
+                    
+            }
+
+            return countTotalRolls <= GameConfiguration.MAX_ROLL_LIMIT;
+
         }
 
         public bool IsLegitimateScore(int inputScore)
@@ -56,140 +103,61 @@ namespace xp.tdd.bowling.game.service
             return inputScore <= GameConfiguration.MAX_ROLL_SCORE;
         }
 
+
         public int GetScoreByFrame(int FrameNumber)
         {
             int totalScore = 0;
 
-            var frame = this.Frames.FirstOrDefault(s => s.Number == FrameNumber);
-
-            if (frame != null)
+            foreach (KeyValuePair<int, int> item in Frames)
             {
-                foreach (Roll roll in frame.Rolls)
-                    totalScore += roll.Score;
+                if (item.Key == FrameNumber)
+                {
+                    totalScore += item.Value;
+                }
+
             }
+
 
             return totalScore;
 
         }
 
-
-        public int GetTotalScore()
-        {
-            int totalScore = 0;
-
-            //try
-            //{
-            //    //totalScore = this.Frames.Count;
-            if (Frames != null)
-            {
-                for (int i = 0; i < Frames.Count; i++)
-                {
-                    if (Frames[i].Rolls != null)
-                    {
-                        for (int j = 0; j < Frames[i].Rolls.Count; j++)
-                        {
-                            totalScore = totalScore + Frames[i].Rolls[j].Score;
-                        }
-                    }
-                }
-            }
-
-                //foreach (var frame in this.Frames)
-                //    foreach (var item in frame.Rolls)
-                //        totalScore += item.Score;
-            //}
-            //catch (System.Exception ex)
-            //{
-            //    throw ex;
-            //}
-
-            return totalScore;
-
-        }
-
-        public bool AddFrame(int FrameNumber)
-        {
-            bool result = false;
-
-            try
-            {
-                if (!HasFrameMaxOut())
-                {
-                    Frame frame = new Frame();
-                    frame.Number = FrameNumber;
-                    frame.FrameTotalScore = GetScoreByFrame(FrameNumber);
-                    this.Frames.Add(frame);
-                    result = true;
-                }
-                else
-                    Message = "The game has only 10 frames";
-                
-            }
-            catch (System.Exception ex)
-            {
-                throw ex;
-            }
-
-            return result;
-        }
-                
-        public bool AddRoll(int FrameNumber, int RollNumber,int NewRollScore)
+        
+        public bool CreateRoll(int FrameNumber, int NewRollScore)
         {
             bool success = false;
 
             try
             {
-
-                if (!IsLegitimateScore(NewRollScore))
+                if (CanAddNewFrame(FrameNumber))
                 {
-                    Message = "Invalid Roll Score.";
-                    return false;
-                }
-
-                Roll roll = new Roll()
-                {
-                    Number = RollNumber,
-                    Score = NewRollScore
-                };
-
-                Frame foundFrame = this.Frames.FirstOrDefault(s => s.Number == FrameNumber);
-
-                //existing frame
-                if (foundFrame != null)
-                {
-                    if (!HasRollMaxOut(foundFrame))
+                    if (IsLegitimateScore(NewRollScore))
                     {
-                        foundFrame.Rolls.Add(roll);
-                        success = true;
-                    }
-                    else                    
-                    {
-                        Message = "Failed to add a new roll.";
-                    }
-                }                    
-                else //no frame
-                {
-                    var frameScore = GetScoreByFrame(FrameNumber);
-                    Frame frame = new Frame();
-                    frame.Number = FrameNumber;
-                    frame.FrameTotalScore = frameScore == 0 ? roll.Score : frameScore;
-                    frame.Rolls = new List<Roll>() { roll };
-                    this.Frames.Add(frame);
-                    success = true;                                        
-                }
-                                
+                        //  var currentFrame = GetCurrentFrameNumber();
 
+                        if (CanAddNewRoll(FrameNumber))
+                        {
+                            if (Frames.Count > 0)
+                                Frames.Add(new KeyValuePair<int, int>(FrameNumber, NewRollScore));
+                            else
+                                Frames.Add(new KeyValuePair<int, int>(1, NewRollScore));
+
+                            success = true;
+
+
+                        }
+
+                    }
+                }
+    
             }
-            catch (System.Exception ex)
+            catch(System.Exception ex)
             {
-                success = false;
                 throw ex;
             }
 
             return success;
         }
-
-        
 
         #endregion
 
